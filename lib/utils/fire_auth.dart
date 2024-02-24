@@ -15,7 +15,7 @@ class FireAuth {
         email: email,
         password: password,
       );
-
+      
       user = userCredential.user;
       await user!.updateProfile(displayName: name);
       await user.reload();
@@ -25,6 +25,8 @@ class FireAuth {
         print('A senha fornecida é muito fraca.');
       } else if (e.code == 'email-already-in-use') {
         print('A conta já existe para esse e-mail.');
+        
+
       }
     } catch (e) {
       print(e);

@@ -1,4 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 class Validator {
+  
+
+
+
+
+
+
+
   static String? validateNome({required String? Nome}) {
     if (Nome == null) {
       return null;
@@ -74,6 +84,7 @@ class Validator {
     } else if (!emailRegExp.hasMatch(email)) {
       return 'Digite um e-mail correto!';
     }
+    
   }
 
   static String? validatePassword({required String? password}) {

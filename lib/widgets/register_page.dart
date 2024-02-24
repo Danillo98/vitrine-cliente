@@ -38,6 +38,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool _isProcessing = false;
 
+  Future<bool> _checkEmailExists(String email) async {
+  try {
+    // Use o método `fetchSignInMethodsForEmail` do FirebaseAuth para verificar se o e-mail já está cadastrado para autenticação
+    List<String> signInMethods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+    
+    // Se signInMethods não estiver vazio, significa que o e-mail já está registrado
+    return signInMethods.isNotEmpty;
+  } catch (e) {
+    // Em caso de erro, trate conforme necessário
+    print('Erro ao verificar e-mail: $e');
+    return false;
+  }
+}
+
   Future<void> _createClienteDocument(
       String userId, String nome, String telefone) async {
     CollectionReference userscliente =
@@ -47,7 +61,6 @@ class _RegisterPageState extends State<RegisterPage> {
       await userscliente.doc(userId).set({
         'nome': nome,
         'telefone': telefone,
-        
       });
     } catch (e) {
       print('Erro ao criar documento da Cliente: $e');
@@ -101,9 +114,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16.0),
-
                       TextFormField(
                         controller: _telefoneTextController,
                         focusNode: _focusTelefone,
@@ -123,9 +134,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16.0),
-
                       TextFormField(
                         controller: _emailTextController,
                         focusNode: _focusEmail,
@@ -145,9 +154,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16.0),
-
                       TextFormField(
                         controller: _passwordTextController,
                         focusNode: _focusPassword,
@@ -182,47 +189,78 @@ class _RegisterPageState extends State<RegisterPage> {
                                         setState(() {
                                           _isProcessing = true;
                                         });
-                                        // Registro de usuário
-                                        User? user = await FireAuth
-                                            .registerUsingEmailPassword(
-                                          name: _nomeclienteTextController.text,
-                                          email: _emailTextController.text,
-                                          password:
-                                              _passwordTextController.text,
-                                        );
+                                        // Verifica se o e-mail já está registrado
+                                        bool emailExists = await _checkEmailExists(
+                                            _emailTextController.text);
+                                         // Adiciona um pequeno atraso após o término do processamento
+                                        await Future.delayed(Duration(milliseconds: 3000));
+                                        
+                                        if (emailExists == true) {
+                                          // E-mail já registrado, exibe mensagem e não permite o registro
+                                          setState(() {
+                                            _isProcessing = false;
+                                          });
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: Text('E-mail já registrado'),
+                                                content: Text(
+                                                    'O e-mail fornecido já está em uso. Por favor, use outro e-mail.'),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context).pop();
+                                                    },
+                                                    child: Text('OK'),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        } else {
+                                          // Registro de usuário
+                                          User? user = await FireAuth
+                                              .registerUsingEmailPassword(
+                                            name: _nomeclienteTextController.text,
+                                            email: _emailTextController.text,
+                                            password:
+                                                _passwordTextController.text,
+                                          );
 
-                                        // Criação do documento da Cliente associado ao usuário
-                                        if (user != null) {
-                                          await _createClienteDocument(
-                                              user.uid,
+                                          // Criação do documento da Cliente associado ao usuário
+                                          if (user != null) {
+                                            await _createClienteDocument(
+                                                user.uid,
+                                                _nomeclienteTextController.text,
+                                                _telefoneTextController.text,
+                                            );
+                                          }
+
+                                          // Salvar o nome da Cliente nas SharedPreferences (se necessário)
+                                          SharedPreferences prefs =
+                                              await SharedPreferences
+                                                  .getInstance();
+                                          await prefs.setString(
+                                              'Cliente_nome_$_userId',
                                               _nomeclienteTextController.text,
-                                              _telefoneTextController.text,
                                           );
-                                        }
 
-                                        // Salvar o nome da Cliente nas SharedPreferences (se necessário)
-                                        SharedPreferences prefs =
-                                            await SharedPreferences
-                                                .getInstance();
-                                        await prefs.setString(
-                                            'Cliente_nome_$_userId',
-                                            _nomeclienteTextController.text,
-                                        );
+                                          setState(() {
+                                            _isProcessing = false;
+                                          });
 
-                                        setState(() {
-                                          _isProcessing = false;
-                                        });
-
-                                        if (user != null) {
-                                          // ignore: use_build_context_synchronously
-                                          Navigator.of(context)
-                                              .pushAndRemoveUntil(
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProfilePage(user: user),
-                                            ),
-                                            ModalRoute.withName('/'),
-                                          );
+                                          if (user != null) {
+                                            // ignore: use_build_context_synchronously
+                                            Navigator.of(context)
+                                                .pushAndRemoveUntil(
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    ProfilePage(user: user),
+                                              ),
+                                              ModalRoute.withName('/'),
+                                            );
+                                          }
                                         }
                                       }
                                     },
