@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vitrine/database.dart';
+import 'package:vitrine/pages/favoritas_page.dart';
 import 'package:vitrine/pages/reservas_page.dart';
 import 'package:vitrine/pages/suporte_page.dart'; 
 import 'package:flutter/services.dart';
@@ -53,7 +54,13 @@ class SideMenuTitle extends StatelessWidget {
           ),
         ),
         ListTile(
-          onTap: () {},
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => FavoritasPage(), // Use SuportePage aqui
+              ),
+            );
+          },
           leading: SizedBox(
             height: 34,
             width: 34,
@@ -62,7 +69,7 @@ class SideMenuTitle extends StatelessWidget {
             ),
           ),
           title: const Text(
-            "Favoritos",
+            "Favoritas",
             style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
           ),
         ),
@@ -73,35 +80,7 @@ class SideMenuTitle extends StatelessWidget {
             height: 1,
           ),
         ),
-         ListTile(
-          onTap: () async {
-            if (db != null) {
-              List<Map<String, dynamic>>? reservas = await db?.getReservas();
-              if (reservas != null) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ReservasPage(reservas: reservas),
-                  ),
-                );
-              } else {
-                print("Erro ao obter as reservas");
-              }
-            } else {
-              print("É nulo !");
-            }
-          },
-          leading: SizedBox(
-            height: 34,
-            width: 34,
-            child: Image.asset(
-              "images/btnreservas.png",
-            ),
-          ),
-          title: const Text(
-            "Reservas",
-            style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
-          ),
-        ),
+        
 
         const Padding(
           padding: EdgeInsets.only(left: 20),
@@ -149,13 +128,13 @@ class SideMenuTitle extends StatelessWidget {
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      child: const Text("Cancelar"),
+                      child: const Text("Cancelar", style: TextStyle(color: Colors.black)),
                     ),
                     TextButton(
                       onPressed: () {
                         SystemNavigator.pop();
                       },
-                      child: const Text("Sair"),
+                      child: const Text("Sair", style: TextStyle(color: Colors.black)),
                     ),
                   ],
                 );

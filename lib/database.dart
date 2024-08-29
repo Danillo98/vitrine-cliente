@@ -89,9 +89,18 @@ Future<List<Map<String, dynamic>>> listar() async {
 
 
 
-Future<List<Map<String, dynamic>>> filtrarInformacoes(String query) async {
+Future<List<Map<String, dynamic>>> filtrarInformacoes(String query, {String? cidade}) async {
   try {
-    QuerySnapshot querySnapshot = await _firestore.collection('Items').get();
+    Query queryRef = _firestore.collection('Items');
+
+    // Filtra os itens por cidade se uma cidade estiver selecionada
+    if (cidade != null && cidade.isNotEmpty) {
+      final cidadeSnapshot = await _firestore.collection('usersadm').where('cidade', isEqualTo: cidade).get();
+      List<String> userIds = cidadeSnapshot.docs.map((doc) => doc.id).toList();
+      queryRef = queryRef.where('userId', whereIn: userIds);
+    }
+
+    QuerySnapshot querySnapshot = await queryRef.get();
 
     List<Map<String, dynamic>> itens = querySnapshot.docs.map((doc) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -126,6 +135,7 @@ Future<List<Map<String, dynamic>>> filtrarInformacoes(String query) async {
 
 
 
+
 Future<List<Map<String, dynamic>>> listar_favoritos() async {
   User? user = FirebaseAuth.instance.currentUser;
 
@@ -145,10 +155,10 @@ Future<List<Map<String, dynamic>>> listar_favoritos() async {
       };
     }).toList();
 
-    print('Favoritos obtidos com sucesso: $docs');
+    print('Favoritas obtidos com sucesso: $docs');
     return docs;
   } catch (e) {
-    print('Erro ao listar favoritos: $e');
+    print('Erro ao listar favoritas: $e');
     return [];
   }
 }
@@ -159,26 +169,31 @@ Future<List<Map<String, dynamic>>> listar_favoritos() async {
 
 
 
-  Future<List<Map<String, dynamic>>> listarUsuariosLoja() async {
-    try {
-      QuerySnapshot querySnapshot = await _firestore
-          .collection('usersadm')
-          .orderBy("nome")
-          .get();
-
-      return querySnapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        return {
-          "nomeLoja": data['nome'] ?? '',
-          "img": data["profileImage"] ?? '',
-          
-        };
-      }).toList();
-    } catch (e) {
-      print('Erro ao listar usuários loja: $e');
-      return [];
+Future<List<Map<String, dynamic>>> listarUsuariosLoja({String? cidade}) async {
+  try {
+    Query query = _firestore.collection('usersadm');
+    if (cidade != null && cidade.isNotEmpty) {
+      query = query.where('cidade', isEqualTo: cidade);
     }
+    QuerySnapshot querySnapshot = await query.get();
+
+    List<Map<String, dynamic>> usuarios = querySnapshot.docs.map((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      return {
+        "nomeLoja": data['nome'],
+        "img": data['profileImage'],
+        "cidade": data['cidade'],
+        // Adicione outros campos conforme necessário
+      };
+    }).toList();
+
+    return usuarios;
+  } catch (e) {
+    print('Erro ao listar usuários: $e');
+    return [];
   }
+}
+
 
   Future<void> editarCliente(String id, Cliente j) async {
     try {

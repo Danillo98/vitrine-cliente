@@ -25,6 +25,8 @@ class PerfilPage extends StatefulWidget {
 class _PerfilPageInfoState extends State<PerfilPage> {
   late String telefone = '';
   late String endereco = '';
+  late String cidade = ''; 
+
   List<Map<String, dynamic>> produtos = [];
   List<Map<String, dynamic>> reservas = [];
 
@@ -74,6 +76,7 @@ class _PerfilPageInfoState extends State<PerfilPage> {
         setState(() {
           telefone = lojaData['telefone'] ?? '';
           endereco = lojaData['endereco'] ?? '';
+          cidade = lojaData['cidade'] ?? '';
           this.produtos = produtos;
         });
       } else {
@@ -158,21 +161,21 @@ void _abrirWhatsApp(String telefone, String mensagem) async {
 }
 
 
-
-void _abrirRotaNoGoogleMaps(String endereco) async {
-  final url = 'https://www.google.com/maps?q=${Uri.encodeFull(endereco)}';
-  try {
-    await UrlLauncher.launch(url);
-  } on PlatformException catch (e) {
-    // Caso ocorra algum erro, tentar abrir o Google Maps diretamente com uma Intent
-    final googleMapsIntentUrl = 'geo:0,0?q=${Uri.encodeFull(endereco)}';
+void _abrirRotaNoGoogleMaps(String endereco, String cidade) async {
+    final enderecoCompleto = '$endereco, $cidade'; // Concatenando a cidade ao endereço
+    final url = 'https://www.google.com/maps?q=${Uri.encodeFull(enderecoCompleto)}';
     try {
-      await UrlLauncher.launch(googleMapsIntentUrl);
-    } catch (e) {
-      throw 'Não foi possível abrir o Google Maps.';
+      await UrlLauncher.launch(url);
+    } on PlatformException catch (e) {
+      // Caso ocorra algum erro, tentar abrir o Google Maps diretamente com uma Intent
+      final googleMapsIntentUrl = 'geo:0,0?q=${Uri.encodeFull(enderecoCompleto)}';
+      try {
+        await UrlLauncher.launch(googleMapsIntentUrl);
+      } catch (e) {
+        throw 'Não foi possível abrir o Google Maps.';
+      }
     }
   }
-}
 
 
 
@@ -244,12 +247,12 @@ void _abrirRotaNoGoogleMaps(String endereco) async {
                               
                             ),
                                 
-                           buildInfoRowWithDivider(
+                            buildInfoRowWithDivider(
                               "Endereço:",
-                              endereco,
+                              '$endereco, $cidade', // Concatenando a cidade ao endereço
                               icon: GestureDetector(
                                 onTap: () {
-                                  _abrirRotaNoGoogleMaps(endereco);
+                                  _abrirRotaNoGoogleMaps(endereco, cidade); // Passando a cidade como parâmetro
                                 },
                                 child: Image.asset(
                                   "images/iconegps.png",
@@ -257,8 +260,8 @@ void _abrirRotaNoGoogleMaps(String endereco) async {
                                   width: 30,
                                 ),
                               ),
-                               
                             ),
+
                           ],
                         ),
                       ),

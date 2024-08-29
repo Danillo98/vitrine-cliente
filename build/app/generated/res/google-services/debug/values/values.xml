@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="gcm_defaultSenderId" translatable="false">846106556704</string>
-    <string name="google_api_key" translatable="false">AIzaSyAVUyxtHr7abPX7l-LW2CoTIk4ypA32kc4</string>
-    <string name="google_app_id" translatable="false">1:846106556704:android:a0b309e7d79f1d9b6eff45</string>
-    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAVUyxtHr7abPX7l-LW2CoTIk4ypA32kc4</string>
-    <string name="google_storage_bucket" translatable="false">vitrine-db-e4b2d.appspot.com</string>
-    <string name="project_id" translatable="false">vitrine-db-e4b2d</string>
-</resources>

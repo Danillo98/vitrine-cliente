@@ -33,6 +33,7 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
 
   final String title;
+  
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -42,12 +43,14 @@ StreamController<List<Map<String, dynamic>>?> searchResultsController =
     StreamController<List<Map<String, dynamic>>?>.broadcast();
 
 class _MyHomePageState extends State<MyHomePage> {
+  
   late Database db;
   List docs = [];
   List<bool> selectedItems = List.generate(0, (_) => false);
   TextEditingController _filtragemController = TextEditingController();
   List<Map<String, dynamic>> usuariosLoja = [];
-  bool isSearching = false; // Flag to indicate if searching is active
+  bool isSearching = false; 
+  String? cidadeSelecionada;
 
   @override
   void initState() {
@@ -57,57 +60,51 @@ class _MyHomePageState extends State<MyHomePage> {
     initialize();
   }
 
-  void initialize() async {
-    try {
-      List<Map<String, dynamic>> result = await db.listarUsuariosLoja();
-      setState(() {
-        usuariosLoja = result;
-      });
-    } catch (e) {
-      print('Erro ao inicializar dados: $e');
-    }
+  void initialize({String? cidade}) async {
+  try {
+    List<Map<String, dynamic>> result = await db.listarUsuariosLoja(cidade: cidade);
+    setState(() {
+      usuariosLoja = result;
+    });
+  } catch (e) {
+    print('Erro ao inicializar dados: $e');
   }
+}
 
-  void _filtrandoTudo(String query) async {
-    if (query.isNotEmpty) {
-      List<dynamic> resultados = await db.filtrarInformacoes(query);
-      print('Resultados da filtragem: $resultados');
-      setState(() {
-        docs = resultados;
-        isSearching = true;
-      });
-    } else {
-      // Se a consulta estiver vazia, reverta para todos os itens
-      setState(() {
-        docs = List.from(usuariosLoja); // Cria uma cópia da lista original
-        isSearching = false;
-        print('Consulta vazia, revertendo para todos os itens: $docs');
-      });
-    }
+
+void _filtrandoTudo(String query) async {
+  if (query.isNotEmpty) {
+    List<dynamic> resultados = await db.filtrarInformacoes(query, cidade: cidadeSelecionada);
+    print('Resultados da filtragem: $resultados');
+    setState(() {
+      docs = resultados;
+      isSearching = true;
+    });
+  } else {
+    // Se a consulta estiver vazia, reverta para todos os itens
+    setState(() {
+      docs = List.from(usuariosLoja); // Cria uma cópia da lista original
+      isSearching = false;
+      print('Consulta vazia, revertendo para todos os itens: $docs');
+    });
   }
+}
+
 
   void _atualizarListaDeLojas() {
-    setState(() {
-      usuariosLoja.clear(); // Limpa a lista de lojas
-      initialize(); // Restaura a lista original de lojas
-    });
+    initialize(); // Chame initialize sem parâmetros para restaurar todas as lojas
   }
 
-  void _filtrarPorCidade(String cidade) {
-    setState(() {
-      if (cidade.isNotEmpty) {
-        usuariosLoja = usuariosLoja.where((loja) {
-          String endereco = loja['endereco'] ?? ''; // Verifica se endereco é nulo
-          print('Endereço da loja: $endereco'); // Adiciona este log
-          endereco = endereco.toLowerCase(); // Converte para minúsculas
-          return endereco.contains(cidade.toLowerCase());
-        }).toList();
-      } else {
-        // Se a cidade estiver vazia, restauramos todas as lojas
-        _atualizarListaDeLojas();
-      }
-    });
-  }
+
+
+
+void _filtrarPorCidade(String cidade) {
+  setState(() {
+    cidadeSelecionada = cidade;
+  });
+  initialize(cidade: cidade);
+}
+
 
   void _navegarParaFavoritas() {
     Navigator.push(
@@ -116,24 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _filtrarUsuariosPorCidade(String cidade) {
-    setState(() {
-      if (cidade.isNotEmpty) {
-        // Faça uma cópia dos dados originais para não perdê-los
-        List<Map<String, dynamic>> todasAsLojas = List.from(usuariosLoja);
+  
 
-        // Filtrar as lojas com base na cidade
-        usuariosLoja = todasAsLojas.where((loja) {
-          String cidadeLoja = loja['cidade'] ?? '';
-          cidadeLoja = cidadeLoja.toLowerCase();
-          return cidadeLoja == cidade.toLowerCase(); // Alteração na condição de filtragem
-        }).toList();
-      } else {
-        // Se a cidade estiver vazia, restauramos todas as lojas
-        _atualizarListaDeLojas();
-      }
-    });
-  }
 
   Widget _buildImageWidget(String? imageUrl) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -149,6 +130,8 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
   }
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -183,8 +166,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     title: Text(
                       'Escolha uma Cidade:',
                       style: TextStyle(
-                        fontSize: 18, // Tamanho da fonte
-                        color: Colors.black, // Cor do texto
+                        fontSize: 18,
+                        color: Colors.black,
                       ),
                     ),
                     content: SingleChildScrollView(
@@ -193,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              _filtrarUsuariosPorCidade('itaperuna');
+                              _filtrarPorCidade('Itaperuna');
                               Navigator.of(context).pop();
                             },
                             child: Text(
@@ -206,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              _filtrarUsuariosPorCidade('campos dos goytacazes');
+                              _filtrarPorCidade('Campos dos Goytacazes');
                               Navigator.of(context).pop();
                             },
                             child: Text(
@@ -219,7 +202,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              _filtrarUsuariosPorCidade('macaé');
+                              _filtrarPorCidade('Macaé');
                               Navigator.of(context).pop();
                             },
                             child: Text(
@@ -255,6 +238,8 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
+      // Defina resizeToAvoidBottomInset como false
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           Padding(
@@ -287,6 +272,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
 
 //Listagem das Lojas
   Widget _buildStoreList() {
