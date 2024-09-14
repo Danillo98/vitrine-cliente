@@ -1,16 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:vitrine/pages/favoritas_page.dart';
-import 'package:vitrine/reserva.dart';
-import 'package:vitrine/pages/reservas_page.dart';
-import 'package:vitrine/database.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart' show UrlLauncher, Intent;
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart' as UrlLauncher;
-import 'package:vitrine/pages/perfil_page.dart';
-
+import 'package:vitrine/pages/perfil_page.dart'; // Import necessário para abrir URLs.
 
 class ItemPesquisadoPage extends StatefulWidget {
   final Map<String, dynamic> produto;
@@ -27,28 +17,23 @@ class ItemPesquisadoPage extends StatefulWidget {
 }
 
 class _ItemPesquisadoPageState extends State<ItemPesquisadoPage> {
-  void _abrirWhatsApp(String telefone, String mensagem) async {
-    final whatsappUrl = "https://wa.me/$telefone?text=${Uri.encodeFull(mensagem)}";
-    try {
-      if (await canLaunch(whatsappUrl)) {
-        await launch(whatsappUrl);
-      } else {
-        throw 'Não foi possível abrir o WhatsApp.';
-      }
-    } catch (e) {
-      print(e);
-    }
+  // Método para abrir o WhatsApp
+void _abrirWhatsApp(String telefone, String mensagem) async {
+  final whatsappUrl = "https://wa.me/$telefone?text=${Uri.encodeFull(mensagem)}";
+  try {
+    await launch(whatsappUrl);
+  } catch (e) {
+    throw 'Não foi possível abrir o WhatsApp.';
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
     final produto = widget.produto;
+    final telefone = widget.telefone; // Pegue o telefone da loja do widget
     final fotoLoja = produto['foto_loja'] ?? '';
     final nomeLoja = produto['nome_loja'] ?? '';
-
-    print("Produto recebido: $produto");
-    print("Foto da loja: $fotoLoja");
-    print("Nome da loja: $nomeLoja");
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -136,32 +121,36 @@ class _ItemPesquisadoPageState extends State<ItemPesquisadoPage> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  final nomeProduto = produto['nomeitem'] ?? 'Produto não disponível';
-                                  final mensagem = 'Olá, Gostei do(a) $nomeProduto e gostaria de reservá-lo(a)!';
-                                  _abrirWhatsApp(widget.telefone, mensagem);
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(255, 0, 0, 0),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.favorite, color: Colors.white),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Reservar',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+  onTap: () {
+    final nomeProduto = produto['nomeitem'] ?? 'Produto não disponível';
+    final mensagem = 'Olá, Gostei do(a) $nomeProduto e gostaria de reservá-lo(a)!';
+    _abrirWhatsApp(widget.telefone, mensagem);
+  },
+  child: Stack(
+    alignment: Alignment.center,
+    children: [
+      Icon(
+        Icons.favorite,
+        color: Colors.black,
+      ),
+      Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          SizedBox(height: 30), // Ajuste o espaçamento vertical aqui
+          Text(
+            'Reservar',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
+
                             ],
                           ),
                         ],

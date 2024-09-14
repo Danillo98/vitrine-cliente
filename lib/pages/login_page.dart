@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -48,44 +49,37 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> _checkEmailVerification() async {
+    Future<void> _checkEmailVerification() async {
     User? user = FirebaseAuth.instance.currentUser;
     await user?.reload();
     user = FirebaseAuth.instance.currentUser;
 
     if (user?.emailVerified == true) {
-      // Se o e-mail estiver verificado, permita o login
       _navigateToHome();
     } else {
-       // ignore: use_build_context_synchronously
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            backgroundColor: Color.fromARGB(255, 255, 255, 255),
+            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
             title: const Text('Verificação de E-mail Necessária'),
-            content: const Text(
-                'Você precisa verificar seu e-mail antes de prosseguir.'),
+            content: const Text('Você precisa verificar seu e-mail antes de prosseguir.'),
             actions: [
               ElevatedButton(
                 onPressed: () async {
-                  // Enviar e-mail de verificação
                   await user?.sendEmailVerification();
-
                   Navigator.pop(context);
-                   // ignore: use_build_context_synchronously
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        backgroundColor: Color.fromARGB(255, 255, 255, 255),
+                        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                         title: const Text('E-mail de Verificação Enviado'),
-                        content: const Text(
-                            'Um e-mail de verificação foi enviado!'),
+                        content: const Text('Um e-mail de verificação foi enviado!'),
                         actions: [
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.pop(context); 
+                              Navigator.pop(context);
                             },
                             child: const Text(
                               'OK',
@@ -113,13 +107,64 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> _navigateToHome() async {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const MyApp(),
-      ),
-    );
+
+Future<void> _checkIsAdm(String email) async {
+  try {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      final userDoc = querySnapshot.docs.first;
+      final isAdm = userDoc.data()?['isAdm'] as bool?;
+      
+      print('Email: $email, isAdm: $isAdm'); // Debugging print
+
+      if (isAdm == false) {
+        // Se não for Admin, verifica o e-mail
+        _checkEmailVerification();
+      } else {
+        // Se for Admin, exibe diálogo e bloqueia login
+        _showAccessDeniedDialog();
+      }
+    } else {
+      // Usuário não encontrado, exibe diálogo de erro
+      print('Usuário não encontrado');
+      _showAccessDeniedDialog();
+    }
+  } catch (e) {
+    print('Erro ao verificar isAdm: $e');
+    _showAccessDeniedDialog();
   }
+}
+
+void _showAccessDeniedDialog() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Acesso Negado'),
+        content: const Text(
+          'Esse email está registrado como Administrador. Acesse o aplicativo VITRINE ADM!',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'OK',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -215,19 +260,14 @@ class _LoginPageState extends State<LoginPage> {
                                             _focusEmail.unfocus();
                                             _focusPassword.unfocus();
 
-                                            if (_formKey.currentState!
-                                                .validate()) {
+                                            if (_formKey.currentState!.validate()) {
                                               setState(() {
                                                 _isProcessing = true;
                                               });
 
-                                              User? user = await FireAuth
-                                                  .signInUsingEmailPassword(
-                                                email:
-                                                    _emailTextController.text,
-                                                password:
-                                                    _passwordTextController
-                                                        .text,
+                                              User? user = await FireAuth.signInUsingEmailPassword(
+                                                email: _emailTextController.text,
+                                                password: _passwordTextController.text,
                                               );
 
                                               setState(() {
@@ -235,14 +275,13 @@ class _LoginPageState extends State<LoginPage> {
                                               });
 
                                               if (user != null) {
-                                                _checkEmailVerification();
+                                                await _checkIsAdm(_emailTextController.text);
                                               } else {
-                                                 // ignore: use_build_context_synchronously
                                                 showDialog(
                                                   context: context,
                                                   builder: (BuildContext context) {
                                                     return AlertDialog(
-                                                      backgroundColor: Color.fromARGB(255, 255, 255, 255),
+                                                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                                                       title: const Text('Erro de Autenticação'),
                                                       content: const Text('E-mail ou senha incorretos.'),
                                                       actions: [
@@ -252,9 +291,7 @@ class _LoginPageState extends State<LoginPage> {
                                                           },
                                                           child: const Text(
                                                             'OK',
-                                                            style: TextStyle(
-                                                              color: Color.fromARGB(255, 255, 255, 255),
-                                                            ),
+                                                            style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                                                           ),
                                                         ),
                                                       ],
@@ -266,9 +303,7 @@ class _LoginPageState extends State<LoginPage> {
                                           },
                                           child: const Text(
                                             'Entrar',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
+                                            style: TextStyle(color: Colors.white),
                                           ),
                                         ),
                                       ),
@@ -318,6 +353,13 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+    Future<void> _navigateToHome() async {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => const MyApp(),
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FireAuth {
-  // For registering a new user
   static Future<User?> registerUsingEmailPassword({
     required String name,
     required String email,
@@ -25,6 +24,7 @@ class FireAuth {
         print('A senha fornecida é muito fraca.');
       } else if (e.code == 'email-already-in-use') {
         print('A conta já existe para esse e-mail.');
+        return null; // Retorne null se o email já estiver em uso.
       }
     } catch (e) {
       print(e);

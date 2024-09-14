@@ -1,18 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../pages/login_page.dart';
+import 'login_page.dart';
 import 'package:vitrine/utils/fire_auth.dart';
 
-class ProfilePage extends StatefulWidget {
+class VerificacaoEmailPage extends StatefulWidget {
   final User user;
 
-  const ProfilePage({required this.user});
+  const VerificacaoEmailPage({required this.user});
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _VerificacaoEmailPageState createState() => _VerificacaoEmailPageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _VerificacaoEmailPageState extends State<VerificacaoEmailPage> {
   bool _isSendingVerification = false;
   bool _isSigningOut = false;
 
@@ -53,11 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'NOME: ${_currentUser.displayName}',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 16.0),
+            
             Text(
               'EMAIL: ${_currentUser.email}',
               style: Theme.of(context).textTheme.bodyLarge,

@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vitrine/widgets/verificacao_email.dart';
+import 'package:vitrine/pages/verificacao_email_page.dart';
 import 'package:vitrine/utils/fire_auth.dart';
 import 'package:vitrine/utils/validator.dart';
 
@@ -39,20 +39,29 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isProcessing = false;
 
   Future<void> _createClienteDocument(
-      String userId, String nome, String telefone) async {
-    CollectionReference userscliente =
-        FirebaseFirestore.instance.collection('userscliente');
+    String userId, String nome, String telefone) async {
+  CollectionReference userscliente =
+      FirebaseFirestore.instance.collection('userscliente');
 
-    try {
-      await userscliente.doc(userId).set({
-        'nome': nome,
-        'telefone': telefone,
-        
-      });
-    } catch (e) {
-      print('Erro ao criar documento da Cliente: $e');
-    }
+  try {
+    // Adiciona o documento na coleção 'userscliente' com email incluído
+    await userscliente.doc(userId).set({
+      'nome': nome,
+      'telefone': telefone,
+      'email': _emailTextController.text, // Inclui o email aqui
+    });
+    
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    await users.doc(userId).set({
+      'email': _emailTextController.text,
+      'isAdm': false,
+    });
+
+  } catch (e) {
+    print('Erro ao criar documento do cliente: $e');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -101,9 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16.0),
-
                       TextFormField(
                         controller: _telefoneTextController,
                         focusNode: _focusTelefone,
@@ -123,10 +130,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16.0),
-
-                      TextFormField(
+                        TextFormField(
                         controller: _emailTextController,
                         focusNode: _focusEmail,
                         validator: (value) => Validator.validateEmail(
@@ -140,14 +145,12 @@ class _RegisterPageState extends State<RegisterPage> {
                               color: Colors.red,
                             ),
                           ),
-                          enabledBorder: UnderlineInputBorder(
+                          enabledBorder: const UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.black),
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 16.0),
-
                       TextFormField(
                         controller: _passwordTextController,
                         focusNode: _focusPassword,
@@ -168,7 +171,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-                      //---------------------------------------------------BOTÂO REGISTRAR-SE-------------------------------------------------
                       const SizedBox(height: 32.0),
                       _isProcessing
                           ? const CircularProgressIndicator()
@@ -177,49 +179,44 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Expanded(
                                   child: ElevatedButton(
                                     onPressed: () async {
-                                      if (_registerFormKey.currentState!
-                                          .validate()) {
+                                      if (_registerFormKey.currentState!.validate()) {
                                         setState(() {
                                           _isProcessing = true;
                                         });
-                                        // Registro de usuário
-                                        User? user = await FireAuth
-                                            .registerUsingEmailPassword(
+
+                                        User? user = await FireAuth.registerUsingEmailPassword(
                                           name: _nomeclienteTextController.text,
                                           email: _emailTextController.text,
-                                          password:
-                                              _passwordTextController.text,
-                                        );
-
-                                        // Criação do documento da Cliente associado ao usuário
-                                        if (user != null) {
-                                          await _createClienteDocument(
-                                              user.uid,
-                                              _nomeclienteTextController.text,
-                                              _telefoneTextController.text,
-                                          );
-                                        }
-
-                                        // Salvar o nome da Cliente nas SharedPreferences (se necessário)
-                                        SharedPreferences prefs =
-                                            await SharedPreferences
-                                                .getInstance();
-                                        await prefs.setString(
-                                            'Cliente_nome_$_userId',
-                                            _nomeclienteTextController.text,
+                                          password: _passwordTextController.text,
                                         );
 
                                         setState(() {
                                           _isProcessing = false;
                                         });
 
-                                        if (user != null) {
-                                          // ignore: use_build_context_synchronously
-                                          Navigator.of(context)
-                                              .pushAndRemoveUntil(
+                                        if (user == null) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('A conta já existe para esse e-mail.'),
+                                            ),
+                                          );
+                                        } else {
+                                          // Cria o documento do cliente e adiciona à coleção 'users'
+                                          await _createClienteDocument(
+                                            user.uid,
+                                            _nomeclienteTextController.text,
+                                            _telefoneTextController.text,
+                                          );
+
+                                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                                          await prefs.setString(
+                                            'Cliente_nome_$_userId',
+                                            _nomeclienteTextController.text,
+                                          );
+
+                                          Navigator.of(context).pushAndRemoveUntil(
                                             MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProfilePage(user: user),
+                                              builder: (context) => VerificacaoEmailPage(user: user),
                                             ),
                                             ModalRoute.withName('/'),
                                           );
