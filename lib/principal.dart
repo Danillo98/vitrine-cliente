@@ -13,8 +13,11 @@ import 'database.dart';
 import 'dart:async';
 import 'pages/favoritas_page.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+
+
+
+class Principal extends StatelessWidget {
+  const Principal({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

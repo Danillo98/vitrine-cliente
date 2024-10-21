@@ -1,14 +1,19 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:vitrine/componentes/side_menu.dart';
 import 'package:vitrine/pages/loading_page.dart';
 import 'package:vitrine/pages/login_page.dart';
 import 'package:vitrine/pages/perfil_page.dart';
+import 'package:vitrine/pages/splashScreen.dart';
 import 'package:vitrine/pages/suporte_page.dart';
 
-// APP DE CLIENTE - Vitrine
 
-void main() {
-  runApp(const MyApp());
+// APP DE CLIENTE - Vitrine
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Garante a inicialização do Firebase antes de rodar o app
+  print("Firebase inicializado com sucesso!");
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -58,7 +63,7 @@ class MyApp extends StatelessWidget {
           bodyLarge: const TextStyle(fontSize: 20),
         ),
       ),
-      home: const LoginPage(),
+      home:  SplashScreen(),
     );
   }
 }

@@ -6,8 +6,9 @@ import 'package:vitrine/pages/senha_page.dart';
 import 'package:vitrine/pages/register_page.dart';
 import 'package:vitrine/utils/fire_auth.dart';
 import 'package:vitrine/utils/validator.dart';
-
 import 'package:vitrine/principal.dart';
+
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -16,162 +17,39 @@ class LoginPage extends StatefulWidget {
   _LoginPageState createState() => _LoginPageState();
 }
 
-chamarTela(BuildContext context, StatelessWidget widget) {
-  Navigator.push(context, MaterialPageRoute(builder: (context) => widget));
-}
-
-
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _emailTextController = TextEditingController();
   final _passwordTextController = TextEditingController();
-
   final _focusEmail = FocusNode();
   final _focusPassword = FocusNode();
 
   bool _isProcessing = false;
-  bool _isFirebaseInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    _initializeFirebase();
+    _initializeFirebase(); // Inicializa Firebase ao iniciar
   }
 
   Future<void> _initializeFirebase() async {
-    if (!_isFirebaseInitialized) {
-      await Firebase.initializeApp();
-      setState(() {
-        _isFirebaseInitialized = true;
-      });
-    }
+    await Firebase.initializeApp();
+    _checkUserLoggedIn(); // Verifica login após Firebase inicializar
   }
 
-    Future<void> _checkEmailVerification() async {
+  Future<void> _checkUserLoggedIn() async {
     User? user = FirebaseAuth.instance.currentUser;
-    await user?.reload();
-    user = FirebaseAuth.instance.currentUser;
 
-    if (user?.emailVerified == true) {
-      _navigateToHome();
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-            title: const Text('Verificação de E-mail Necessária'),
-            content: const Text('Você precisa verificar seu e-mail antes de prosseguir.'),
-            actions: [
-              ElevatedButton(
-                onPressed: () async {
-                  await user?.sendEmailVerification();
-                  Navigator.pop(context);
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                        title: const Text('E-mail de Verificação Enviado'),
-                        content: const Text('Um e-mail de verificação foi enviado!'),
-                        actions: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: const Text(
-                              'OK',
-                              style: TextStyle(
-                                color: Color.fromARGB(255, 255, 255, 255),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                child: const Text(
-                  'Verificar',
-                  style: TextStyle(
-                    color: Color.fromARGB(255, 255, 255, 255),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+    if (user != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Principal()),
       );
     }
   }
-
-
-Future<void> _checkIsAdm(String email) async {
-  try {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .get();
-
-    if (querySnapshot.docs.isNotEmpty) {
-      final userDoc = querySnapshot.docs.first;
-      final isAdm = userDoc.data()?['isAdm'] as bool?;
-      
-      print('Email: $email, isAdm: $isAdm'); // Debugging print
-
-      if (isAdm == false) {
-        // Se não for Admin, verifica o e-mail
-        _checkEmailVerification();
-      } else {
-        // Se for Admin, exibe diálogo e bloqueia login
-        _showAccessDeniedDialog();
-      }
-    } else {
-      // Usuário não encontrado, exibe diálogo de erro
-      print('Usuário não encontrado');
-      _showAccessDeniedDialog();
-    }
-  } catch (e) {
-    print('Erro ao verificar isAdm: $e');
-    _showAccessDeniedDialog();
-  }
-}
-
-void _showAccessDeniedDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Acesso Negado'),
-        content: const Text(
-          'Esse email está registrado como Administrador. Acesse o aplicativo VITRINE ADM!',
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'OK',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-
 
   @override
   Widget build(BuildContext context) {
-    if (!_isFirebaseInitialized) {
-      return const CircularProgressIndicator();
-    }
-
     return GestureDetector(
       onTap: () {
         _focusEmail.unfocus();
@@ -260,14 +138,18 @@ void _showAccessDeniedDialog() {
                                             _focusEmail.unfocus();
                                             _focusPassword.unfocus();
 
-                                            if (_formKey.currentState!.validate()) {
+                                            if (_formKey.currentState!
+                                                .validate()) {
                                               setState(() {
                                                 _isProcessing = true;
                                               });
 
-                                              User? user = await FireAuth.signInUsingEmailPassword(
+                                              User? user =
+                                                  await FireAuth
+                                                      .signInUsingEmailPassword(
                                                 email: _emailTextController.text,
-                                                password: _passwordTextController.text,
+                                                password:
+                                                    _passwordTextController.text,
                                               );
 
                                               setState(() {
@@ -275,29 +157,8 @@ void _showAccessDeniedDialog() {
                                               });
 
                                               if (user != null) {
-                                                await _checkIsAdm(_emailTextController.text);
-                                              } else {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (BuildContext context) {
-                                                    return AlertDialog(
-                                                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                                                      title: const Text('Erro de Autenticação'),
-                                                      content: const Text('E-mail ou senha incorretos.'),
-                                                      actions: [
-                                                        ElevatedButton(
-                                                          onPressed: () {
-                                                            Navigator.pop(context);
-                                                          },
-                                                          child: const Text(
-                                                            'OK',
-                                                            style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                );
+                                                await _checkIsAdm(
+                                                    _emailTextController.text);
                                               }
                                             }
                                           },
@@ -315,8 +176,10 @@ void _showAccessDeniedDialog() {
                                               MaterialPageRoute(
                                                 builder: (context) =>
                                                     RegisterPage(
-                                                  userId: FirebaseAuth.instance
-                                                          .currentUser?.uid ??
+                                                  userId: FirebaseAuth
+                                                          .instance
+                                                          .currentUser
+                                                          ?.uid ??
                                                       '',
                                                 ),
                                               ),
@@ -332,20 +195,26 @@ void _showAccessDeniedDialog() {
                                       ),
                                     ],
                                   ),
-                            const SizedBox(height: 50.0),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
+                            const SizedBox(height: 10.0),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
                                   MaterialPageRoute(
-                                      builder: (context) => SenhaPage()),
+                                    builder: (context) => SenhaPage(),
+                                  ),
                                 );
                               },
-                              child: const Text('Esqueceu sua senha?'),
+                              child: const Text(
+                                'Esqueci minha senha',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -356,12 +225,49 @@ void _showAccessDeniedDialog() {
       ),
     );
   }
-    Future<void> _navigateToHome() async {
+
+  Future<void> _checkIsAdm(String email) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      final isAdm = querySnapshot.docs.first.data()['isAdm'] as bool?;
+
+      if (isAdm == false) {
+        _navigateToHome();
+      } else {
+        _showAccessDeniedDialog();
+      }
+    }
+  }
+
+  void _showAccessDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Acesso Negado'),
+          content: const Text(
+            'Esse email está registrado como Administrador. Acesse o aplicativo VITRINE ADM!',
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _navigateToHome() {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const MyApp(),
-      ),
+      MaterialPageRoute(builder: (context) => Principal()),
     );
   }
 }
-
